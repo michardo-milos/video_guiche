@@ -1,5 +1,6 @@
 package com.example.videoapp
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -17,10 +18,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // Initialize default options for Jitsi Meet conferences.
-        val serverURL: URL
+        /* val serverURL: URL
         serverURL = try {
             // When using JaaS, replace "https://meet.jit.si" with the proper serverURL
-            URL("https://188.166.13.78")
+            URL("https://videoapp.live")
             // URL("https://meet.jit.si")
         } catch (e: MalformedURLException) {
             e.printStackTrace()
@@ -32,23 +33,26 @@ class MainActivity : AppCompatActivity() {
             //.setToken("MyJWT")
             .setWelcomePageEnabled(true)
             .build()
-        JitsiMeet.setDefaultConferenceOptions(defaultOptions)
+        JitsiMeet.setDefaultConferenceOptions(defaultOptions) */
     }
 
     fun onButtonClick(v: View?) {
         val editText = findViewById<EditText>(R.id.conferenceName)
         val text = editText.text.toString()
         if (text.isNotEmpty()) {
+            val intent = Intent(this, VideoActivity::class.java).apply {
+                putExtra("ROOM_NAME", text)
+            }
+            startActivity(intent)
             // Build options object for joining the conference. The SDK will merge the default
             // one we set earlier and this one when joining.
-            val options = JitsiMeetConferenceOptions.Builder()
-                    .setRoom(text)
-                    .build()
-            Log.d("JITSI_LOG", text)
+//            val options = JitsiMeetConferenceOptions.Builder()
+//                    .setRoom(text)
+//                    .build()
             // Launch the new activity with the given options. The launch() method takes care
             // of creating the required Intent and passing the options.
             // JitsiMeetActivity.launch(this, options)
-            JitsiMeetActivity.launch(this, options)
+//            JitsiMeetActivity.launch(this, options)
 
         }
     }
