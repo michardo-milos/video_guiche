@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "543975044949",
+    "project_id": "video-guiche",
+    "storage_bucket": "video-guiche.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:543975044949:android:efe74f49c0374048e461dc",
+        "android_client_info": {
+          "package_name": "com.example.videoapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "543975044949-iusb3ihe62ps2454ussn94v1fjg2a4ub.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.videoapp",
+            "certificate_hash": "7bcc5022313c6260f5e4fe4de2248ee1def8081f"
+          }
+        },
+        {
+          "client_id": "543975044949-kob6nvsaofjct1ha6cf9spqarob561e3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-SEFuqLy1QMFNet5xBCEK3mmJI3K9aOY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "543975044949-kob6nvsaofjct1ha6cf9spqarob561e3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

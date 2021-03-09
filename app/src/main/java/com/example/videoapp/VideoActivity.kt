@@ -1,44 +1,58 @@
 package com.example.videoapp
 
-import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
-import android.content.IntentFilter
+import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
+import android.media.MediaDrmResetException
+import android.media.MediaRecorder
+import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
+import android.util.DisplayMetrics
 import android.util.Log
+import android.view.Display
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Chronometer
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.VideoView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.facebook.react.modules.core.PermissionListener
+import io.socket.client.IO
+import io.socket.client.Manager
+import io.socket.client.Socket
+import io.socket.engineio.client.transports.Polling
+import io.socket.engineio.client.transports.PollingXHR
 import org.jitsi.meet.sdk.JitsiMeet
 import org.jitsi.meet.sdk.JitsiMeetActivityInterface
 import org.jitsi.meet.sdk.JitsiMeetConferenceOptions
 import org.jitsi.meet.sdk.JitsiMeetView
+import org.json.JSONObject
 import java.net.MalformedURLException
 import java.net.URL
 
 
 class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
 
-    private val broadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent != null) {
-                onBroadcastReceived(intent)
-            }
-        }
-    }
+    private var mSocket: Socket? = null
+    private var room: String = ""
+    var mediaRecorder: MediaRecorder? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video)
 
-        Log.i("VIDEO_BUTTON", "created")
+        room = intent.getStringExtra("ROOM_NAME").toString()
 
-        val room = intent.getStringExtra("ROOM_NAME")
+        connectToSocketServer()
 
         val serverURL: URL
         serverURL = try {
@@ -51,9 +65,11 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         }
         val defaultOptions = JitsiMeetConferenceOptions.Builder()
             .setServerURL(serverURL)
-            // When using JaaS, set the obtained JWT here
-            //.setToken("MyJWT")
             .setWelcomePageEnabled(true)
+            .setFeatureFlag("meeting-name.enabled", false)
+            .setFeatureFlag("pip.enabled", false)
+            .setFeatureFlag("close-captions.enabled", false)
+            .setFeatureFlag("live-streaming.enabled", false)
             .build()
         JitsiMeet.setDefaultConferenceOptions(defaultOptions)
         val layout = findViewById<FrameLayout>(R.id.frameLayout)
@@ -62,30 +78,138 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         val options = JitsiMeetConferenceOptions.Builder()
             .setRoom(room)
             .build()
-//         Launch the new activity with the given options. The launch() method takes care
-        // of creating the required Intent and passing the options.
-        // JitsiMeetActivity.launch(this, options)
-        // JitsiMeetActivity.launch(this, options)
         view.join(options)
         view.layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1450, Gravity.CENTER_VERTICAL)
 
-//        val params = ViewGroup.LayoutParams(70, 60)
-
         layout.addView(view)
+
+//        Log.i("SOCKET_INFO", mSocket?.connected().toString())
 
     }
 
-    fun onClickShowVideo (v: View?) {
+
+    fun connectToSocketServer () {
+        try {
+            val options = IO.Options()
+            options.reconnection = true
+//            options.forceNew = true
+//            options.transports = arrayOf(Polling.NAME, PollingXHR.NAME, io.socket.engineio.client.transports.WebSocket.NAME)
+            mSocket = IO.socket("http://62.171.136.153:5000", options)
+            Log.i("SOCKET_INFO", mSocket.toString())
+            mSocket?.connect()
+            mSocket?.on(Socket.EVENT_CONNECT) {
+                runOnUiThread {
+                    Log.i("SOCKET_INFO", "EVENT_CONNECT")
+                    val obj = JSONObject()
+                    obj.put("room_id", room)
+                    mSocket?.emit("join_room", obj)
+                }
+            }
+            mSocket?.on("video_shared") {
+                runOnUiThread {
+                    showVideo()
+                }
+            }
+            mSocket?.on(Socket.EVENT_CONNECT_ERROR) { args ->
+                if (args[0] != null) {
+                    Log.i("SOCKET_INFO", "EVENT_CONNECT_ERROR")
+                    for (index: Int in args.indices) {
+                        Log.i("SOCKET_INFO", args[index].toString())
+                    }
+                }
+            }
+            mSocket?.on("timer_started") { args ->
+                runOnUiThread {
+                    Log.i("TIMER_STARTED", args[0].toString())
+                    if (args[0] != null) {
+                        startTimer(args[0].toString().toInt())
+                    }
+                }
+            }
+            Log.i("SOCKET_INFO", mSocket?.connected().toString())
+        } catch (e: Exception) {
+            Log.i("SOCKET_INFO", e.toString())
+            mSocket = null
+        }
+    }
+
+    fun showVideo () {
         val videoView = findViewById<VideoView>(R.id.videoView)
+        val simpleChronometer = findViewById<Chronometer>(R.id.simpleChronometer)
         val videoViewHeight = videoView.height
         val uri: Uri = Uri.parse("android.resource://" + packageName + "/" + R.raw.test)
         videoView.setVideoURI(uri)
+        videoView.visibility = View.VISIBLE
+        simpleChronometer.visibility = View.INVISIBLE
         videoView.start()
+    }
+
+    fun onClickShowVideo () {
+//        showVideo()
+        val obj = JSONObject()
+        obj.put("room_id", room)
+        mSocket?.emit("share_video", obj)
 //        videoView.layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, videoViewHeight)
+    }
+    fun startTimer (duration: Int) {
+        val videoView = findViewById<VideoView>(R.id.videoView)
+        val simpleChronometer = findViewById<Chronometer>(R.id.simpleChronometer)
+        simpleChronometer.isCountDown = true
+        simpleChronometer.base = SystemClock.elapsedRealtime() + (duration * 60000)
+        simpleChronometer.visibility = View.VISIBLE
+        videoView.visibility = View.INVISIBLE
+        simpleChronometer.start()
+    }
+
+    fun onClickStartTimer () {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Tempo do timer")
+        val input = EditText(this)
+        builder.setView(input)
+
+        builder.setPositiveButton(
+                "OK"
+        ) { dialog, which ->
+            val obj = JSONObject()
+            obj.put("room_id", room)
+            obj.put("duration", input.text.toString().toInt())
+            mSocket?.emit("start_timer", obj)
+//            startTimer(input.text.toString().toInt())
+        }
+        builder.setNegativeButton(
+                "Cancel"
+        ) { dialog, which -> dialog.cancel() }
+
+        builder.show()
+//        videoView.layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, videoViewHeight)
+    }
+
+    fun onClickRecord () {
+        mediaRecorder = MediaRecorder()
+        mediaRecorder?.setAudioSource(MediaRecorder.AudioSource.MIC)
+        mediaRecorder?.setVideoSource(MediaRecorder.VideoSource.SURFACE)
+        mediaRecorder?.prepare()
+        mediaRecorder?.start()
     }
 
     override fun requestPermissions(p0: Array<out String>?, p1: Int, p2: PermissionListener?) {
         TODO("Not yet implemented")
+    }
+
+    fun onClickFabButton (v: View) {
+        Log.i("FAB", "FAB CLICKED")
+        val builder = AlertDialog.Builder(this)
+        val arrayActions = arrayOf("Show Video", "Start Timer", "Record")
+        builder.setTitle("Acções")
+                .setItems(arrayActions,
+                        DialogInterface.OnClickListener { dialog, wich ->
+                            when (wich) {
+                                0 -> onClickShowVideo()
+                                1 -> onClickStartTimer()
+                                2 -> onClickRecord()
+                            }
+                        })
+        builder.show()
     }
 
     fun onBroadcastReceived (intent: Intent) {

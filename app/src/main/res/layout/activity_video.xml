@@ -7,11 +7,19 @@
     android:layout_height="match_parent"
     tools:context=".VideoActivity">
 
+    <Chronometer
+        android:id="@+id/simpleChronometer"
+        android:layout_width="wrap_content"
+        android:layout_height="200px"
+        android:textSize="50dp"
+        android:layout_gravity="center_horizontal"
+        android:visibility="invisible" />
+
     <VideoView
         android:id="@+id/videoView"
         android:layout_width="wrap_content"
         android:layout_height="88dp"
-        android:visibility="visible" />
+        android:visibility="invisible" />
 
     <View
         android:id="@+id/jitsiView"
@@ -19,12 +27,28 @@
         android:layout_height="1450px"
         android:layout_gravity="center_vertical" />
 
-    <Button
+    <!--<Button
         android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center"
         android:onClick="onClickShowVideo"
         android:text="Show Video" />
+
+    <Button
+        android:id="@+id/button3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:text="Button" />-->
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/floatingActionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|right"
+        android:clickable="true"
+        android:onClick="onClickFabButton"
+        app:srcCompat="@android:drawable/ic_menu_add" />
 
 </FrameLayout>
