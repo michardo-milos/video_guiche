@@ -2,10 +2,12 @@ package com.example.videoapp
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.example.videoapp.VideoActivity
 import kotlin.random.Random
 
 
@@ -16,6 +18,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun enterVideoConference(roomName: String) {
+        Log.i("MAIN", "enterVideoConference")
         val intent = Intent(this, VideoActivity::class.java).apply {
             putExtra("ROOM_NAME", roomName)
         }
@@ -23,12 +26,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun onButtonClick(v: View?) {
+        Log.i("MAIN", "onButtonClick")
         val room = Random.nextInt(111111, 999999).toString()
         enterVideoConference(room)
 
     }
 
     fun onJoinButtonClick (v: View) {
+        Log.i("MAIN", "onJoinButtonClick")
         var roomName = ""
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Juntar a uma sala")

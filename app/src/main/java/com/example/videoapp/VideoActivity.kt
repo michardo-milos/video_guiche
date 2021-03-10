@@ -24,6 +24,8 @@ import android.widget.FrameLayout
 import android.widget.VideoView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.example.videoapp.MainActivity
+import com.example.videoapp.R
 import com.facebook.react.modules.core.PermissionListener
 import io.socket.client.IO
 import io.socket.client.Manager
@@ -44,6 +46,7 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
     private var mSocket: Socket? = null
     private var room: String = ""
     var mediaRecorder: MediaRecorder? = null
+    var isTimerRunning: Boolean = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,7 +69,7 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         val defaultOptions = JitsiMeetConferenceOptions.Builder()
             .setServerURL(serverURL)
             .setWelcomePageEnabled(true)
-            .setFeatureFlag("meeting-name.enabled", false)
+//            .setFeatureFlag("meeting-name.enabled", false)
             .setFeatureFlag("pip.enabled", false)
             .setFeatureFlag("close-captions.enabled", false)
             .setFeatureFlag("live-streaming.enabled", false)
@@ -126,6 +129,11 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
                     }
                 }
             }
+            mSocket?.on("timer_stoped") { args ->
+                runOnUiThread {
+                    stopTimer()
+                }
+            }
             Log.i("SOCKET_INFO", mSocket?.connected().toString())
         } catch (e: Exception) {
             Log.i("SOCKET_INFO", e.toString())
@@ -159,6 +167,21 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         simpleChronometer.visibility = View.VISIBLE
         videoView.visibility = View.INVISIBLE
         simpleChronometer.start()
+        isTimerRunning = true
+    }
+
+    fun stopTimer () {
+        val simpleChronometer = findViewById<Chronometer>(R.id.simpleChronometer)
+        simpleChronometer.stop()
+        simpleChronometer.visibility = View.INVISIBLE
+        isTimerRunning = false
+    }
+
+
+    fun onClickStopTimer () {
+        val obj = JSONObject()
+        obj.put("room_id", room)
+        mSocket?.emit("stop_timer", obj)
     }
 
     fun onClickStartTimer () {
@@ -199,13 +222,19 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
     fun onClickFabButton (v: View) {
         Log.i("FAB", "FAB CLICKED")
         val builder = AlertDialog.Builder(this)
-        val arrayActions = arrayOf("Show Video", "Start Timer", "Record")
+        var arrayActions = emptyArray<String>()
+        if (!isTimerRunning) {
+            arrayActions = arrayOf("Show Video", "Start Timer", "Record")
+        } else {
+            arrayActions = arrayOf("Show Video", "Stop Timer", "Record")
+        }
+
         builder.setTitle("Acções")
                 .setItems(arrayActions,
                         DialogInterface.OnClickListener { dialog, wich ->
                             when (wich) {
                                 0 -> onClickShowVideo()
-                                1 -> onClickStartTimer()
+                                1 -> if (isTimerRunning) onClickStopTimer() else onClickStartTimer()
                                 2 -> onClickRecord()
                             }
                         })
