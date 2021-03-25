@@ -18,6 +18,7 @@ import android.view.Display
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebView
 import android.widget.Chronometer
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -32,10 +33,7 @@ import io.socket.client.Manager
 import io.socket.client.Socket
 import io.socket.engineio.client.transports.Polling
 import io.socket.engineio.client.transports.PollingXHR
-import org.jitsi.meet.sdk.JitsiMeet
-import org.jitsi.meet.sdk.JitsiMeetActivityInterface
-import org.jitsi.meet.sdk.JitsiMeetConferenceOptions
-import org.jitsi.meet.sdk.JitsiMeetView
+import org.jitsi.meet.sdk.*
 import org.json.JSONObject
 import java.net.MalformedURLException
 import java.net.URL
@@ -143,12 +141,13 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
 
     fun showVideo () {
         val videoView = findViewById<VideoView>(R.id.videoView)
-        val simpleChronometer = findViewById<Chronometer>(R.id.simpleChronometer)
+//        val videoView = findViewById<WebView>(R.id.youtubeView)
+//        val simpleChronometer = findViewById<Chronometer>(R.id.simpleChronometer)
         val videoViewHeight = videoView.height
         val uri: Uri = Uri.parse("android.resource://" + packageName + "/" + R.raw.test)
         videoView.setVideoURI(uri)
         videoView.visibility = View.VISIBLE
-        simpleChronometer.visibility = View.INVISIBLE
+//        simpleChronometer.visibility = View.INVISIBLE
         videoView.start()
     }
 
@@ -160,12 +159,12 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
 //        videoView.layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, videoViewHeight)
     }
     fun startTimer (duration: Int) {
-        val videoView = findViewById<VideoView>(R.id.videoView)
+//        val videoView = findViewById<VideoView>(R.id.videoView)
         val simpleChronometer = findViewById<Chronometer>(R.id.simpleChronometer)
         simpleChronometer.isCountDown = true
         simpleChronometer.base = SystemClock.elapsedRealtime() + (duration * 60000)
         simpleChronometer.visibility = View.VISIBLE
-        videoView.visibility = View.INVISIBLE
+//        videoView.visibility = View.INVISIBLE
         simpleChronometer.start()
         isTimerRunning = true
     }
@@ -215,10 +214,6 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         mediaRecorder?.start()
     }
 
-    override fun requestPermissions(p0: Array<out String>?, p1: Int, p2: PermissionListener?) {
-        TODO("Not yet implemented")
-    }
-
     fun onClickFabButton (v: View) {
         Log.i("FAB", "FAB CLICKED")
         val builder = AlertDialog.Builder(this)
@@ -247,5 +242,9 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
             val mainActivityItent = Intent(this, MainActivity::class.java).apply {}
             startActivity(mainActivityItent)
         }
+    }
+
+    override fun requestPermissions(p0: Array<out String>?, p1: Int, p2: PermissionListener?) {
+        JitsiMeetActivityDelegate.requestPermissions(this, p0, p1, p2)
     }
 }

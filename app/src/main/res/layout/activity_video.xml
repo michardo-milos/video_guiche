@@ -9,15 +9,20 @@
 
     <Chronometer
         android:id="@+id/simpleChronometer"
-        android:layout_width="wrap_content"
-        android:layout_height="200px"
+        android:layout_width="184dp"
+        android:layout_height="88dp"
+        android:layout_gravity="right|center_horizontal"
         android:textSize="50dp"
-        android:layout_gravity="center_horizontal"
         android:visibility="invisible" />
+
+    <!--<WebView
+        android:id="@+id/youtubeView"
+        android:layout_width="229dp"
+        android:layout_height="91dp" />-->
 
     <VideoView
         android:id="@+id/videoView"
-        android:layout_width="wrap_content"
+        android:layout_width="231dp"
         android:layout_height="88dp"
         android:visibility="invisible" />
 
