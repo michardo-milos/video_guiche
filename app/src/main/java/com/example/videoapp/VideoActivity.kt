@@ -1,40 +1,31 @@
 package com.example.videoapp
 
-import android.content.Context
+import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
-import android.hardware.display.DisplayManager
-import android.hardware.display.VirtualDisplay
-import android.media.MediaDrmResetException
 import android.media.MediaRecorder
-import android.media.projection.MediaProjection
-import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
-import android.util.DisplayMetrics
 import android.util.Log
-import android.view.Display
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.WebView
-import android.widget.Chronometer
-import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.VideoView
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.example.videoapp.MainActivity
-import com.example.videoapp.R
 import com.facebook.react.modules.core.PermissionListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.YouTubePlayerCallback
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.YouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 import io.socket.client.IO
-import io.socket.client.Manager
 import io.socket.client.Socket
-import io.socket.engineio.client.transports.Polling
-import io.socket.engineio.client.transports.PollingXHR
 import org.jitsi.meet.sdk.*
 import org.json.JSONObject
+import java.io.File
+import java.lang.reflect.Field
 import java.net.MalformedURLException
 import java.net.URL
 
@@ -45,8 +36,13 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
     private var room: String = ""
     var mediaRecorder: MediaRecorder? = null
     var isTimerRunning: Boolean = false
+    var isTimerSet: Boolean = false
+    var timeWhenStopped: Long = 0
+    var videoId: String = ""
+    var videoPlayer : YouTubePlayer? = null
 
 
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video)
@@ -57,9 +53,7 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
 
         val serverURL: URL
         serverURL = try {
-            // When using JaaS, replace "https://meet.jit.si" with the proper serverURL
             URL("https://videoapp.live")
-            // URL("https://meet.jit.si")
         } catch (e: MalformedURLException) {
             e.printStackTrace()
             throw RuntimeException("Invalid server URL!")
@@ -67,7 +61,6 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         val defaultOptions = JitsiMeetConferenceOptions.Builder()
             .setServerURL(serverURL)
             .setWelcomePageEnabled(true)
-//            .setFeatureFlag("meeting-name.enabled", false)
             .setFeatureFlag("pip.enabled", false)
             .setFeatureFlag("close-captions.enabled", false)
             .setFeatureFlag("live-streaming.enabled", false)
@@ -83,9 +76,6 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         view.layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1450, Gravity.CENTER_VERTICAL)
 
         layout.addView(view)
-
-//        Log.i("SOCKET_INFO", mSocket?.connected().toString())
-
     }
 
 
@@ -106,9 +96,10 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
                     mSocket?.emit("join_room", obj)
                 }
             }
-            mSocket?.on("video_shared") {
+            mSocket?.on("video_shared") { args ->
                 runOnUiThread {
-                    showVideo()
+                    if (args[0] != null)
+                    showVideo(args[0] as String)
                 }
             }
             mSocket?.on(Socket.EVENT_CONNECT_ERROR) { args ->
@@ -119,12 +110,17 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
                     }
                 }
             }
-            mSocket?.on("timer_started") { args ->
+            mSocket?.on("timer_defined") { args ->
                 runOnUiThread {
                     Log.i("TIMER_STARTED", args[0].toString())
-                    if (args[0] != null) {
-                        startTimer(args[0].toString().toInt())
-                    }
+                    if (args[0] != null)
+                        setTimer(args[0] as Int)
+                }
+            }
+            mSocket?.on("timer_started") { args ->
+                runOnUiThread {
+                    Log.i("TIMER_STARTED", "timer_started")
+                    startTimer()
                 }
             }
             mSocket?.on("timer_stoped") { args ->
@@ -139,43 +135,73 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         }
     }
 
-    fun showVideo () {
-        val videoView = findViewById<VideoView>(R.id.videoView)
-//        val videoView = findViewById<WebView>(R.id.youtubeView)
-//        val simpleChronometer = findViewById<Chronometer>(R.id.simpleChronometer)
-        val videoViewHeight = videoView.height
-        val uri: Uri = Uri.parse("android.resource://" + packageName + "/" + R.raw.test)
+    fun showVideo (id: String) {
+        val builder = AlertDialog.Builder(this)
+        val videoView = VideoView(this)
+//        val videoView = findViewById<VideoView>(R.id.videoView)
+        val uri: Uri = Uri.parse("android.resource://" + packageName + "/" + resources.getIdentifier(id, "raw", packageName))
         videoView.setVideoURI(uri)
-        videoView.visibility = View.VISIBLE
-//        simpleChronometer.visibility = View.INVISIBLE
+        builder.setView(videoView)
+        builder.setNegativeButton(
+                "Cancel"
+        ) { dialog, which -> dialog.cancel() }
+        builder.show()
         videoView.start()
     }
 
     fun onClickShowVideo () {
-//        showVideo()
-        val obj = JSONObject()
-        obj.put("room_id", room)
-        mSocket?.emit("share_video", obj)
-//        videoView.layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, videoViewHeight)
+        var arrayActions = ArrayList<String>()
+        val fields: Array<Field> = R.raw::class.java.fields
+        fields.forEach {field ->
+            if (field.name.contains("video_")) {
+                arrayActions.add(field.name)
+                Log.d("RAW", String.format(
+                        "name=\"%s\", id=0x%08x",
+                        field.name, field.getInt(field))
+                )
+            }
+        }
+        var array = arrayActions.toTypedArray()
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Link do video")
+
+        builder.setItems(array,
+                DialogInterface.OnClickListener { dialog, wich ->
+                    val obj = JSONObject()
+                    obj.put("room_id", room)
+                    obj.put("video_name", array[wich])
+                    mSocket?.emit("share_video", obj)
+                })
+
+        builder.show()
     }
-    fun startTimer (duration: Int) {
-//        val videoView = findViewById<VideoView>(R.id.videoView)
+
+    fun setTimer (duration: Int) {
         val simpleChronometer = findViewById<Chronometer>(R.id.simpleChronometer)
         simpleChronometer.isCountDown = true
         simpleChronometer.base = SystemClock.elapsedRealtime() + (duration * 60000)
+        timeWhenStopped =  simpleChronometer.base - SystemClock.elapsedRealtime()
         simpleChronometer.visibility = View.VISIBLE
-//        videoView.visibility = View.INVISIBLE
+        isTimerSet = true
+    }
+
+    fun startTimer () {
+        val simpleChronometer = findViewById<Chronometer>(R.id.simpleChronometer)
+//        simpleChronometer.isCountDown = true
+        simpleChronometer.base = SystemClock.elapsedRealtime() + timeWhenStopped
+//        simpleChronometer.visibility = View.VISIBLE
         simpleChronometer.start()
         isTimerRunning = true
     }
 
     fun stopTimer () {
         val simpleChronometer = findViewById<Chronometer>(R.id.simpleChronometer)
+        timeWhenStopped = simpleChronometer.base - SystemClock.elapsedRealtime()
         simpleChronometer.stop()
         simpleChronometer.visibility = View.INVISIBLE
+        isTimerSet = false
         isTimerRunning = false
     }
-
 
     fun onClickStopTimer () {
         val obj = JSONObject()
@@ -184,6 +210,12 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
     }
 
     fun onClickStartTimer () {
+        val obj = JSONObject()
+        obj.put("room_id", room)
+        mSocket?.emit("start_timer", obj)
+    }
+
+    fun onClickSetTimer () {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Tempo do timer")
         val input = EditText(this)
@@ -195,7 +227,7 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
             val obj = JSONObject()
             obj.put("room_id", room)
             obj.put("duration", input.text.toString().toInt())
-            mSocket?.emit("start_timer", obj)
+            mSocket?.emit("set_timer", obj)
 //            startTimer(input.text.toString().toInt())
         }
         builder.setNegativeButton(
@@ -219,7 +251,11 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         val builder = AlertDialog.Builder(this)
         var arrayActions = emptyArray<String>()
         if (!isTimerRunning) {
-            arrayActions = arrayOf("Show Video", "Start Timer", "Record")
+            if (isTimerSet) {
+                arrayActions = arrayOf("Show Video", "Start Timer", "Record")
+            } else {
+                arrayActions = arrayOf("Show Video", "Set Timer", "Record")
+            }
         } else {
             arrayActions = arrayOf("Show Video", "Stop Timer", "Record")
         }
@@ -229,7 +265,16 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
                         DialogInterface.OnClickListener { dialog, wich ->
                             when (wich) {
                                 0 -> onClickShowVideo()
-                                1 -> if (isTimerRunning) onClickStopTimer() else onClickStartTimer()
+                                1 ->
+                                    if (isTimerRunning) {
+                                        onClickStopTimer()
+                                    }  else {
+                                        if (isTimerSet) {
+                                            onClickStartTimer()
+                                        } else {
+                                            onClickSetTimer()
+                                        }
+                                    }
                                 2 -> onClickRecord()
                             }
                         })
@@ -246,5 +291,9 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
 
     override fun requestPermissions(p0: Array<out String>?, p1: Int, p2: PermissionListener?) {
         JitsiMeetActivityDelegate.requestPermissions(this, p0, p1, p2)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
     }
 }

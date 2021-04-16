@@ -7,16 +7,35 @@
     android:layout_height="match_parent"
     tools:context=".VideoActivity">
 
+<!--    <fragment
+        android:name="com.google.android.youtube.player.YouTubePlayerFragment"
+        android:id="@+id/youtube_view"
+        android:visibility="invisible"
+        android:layout_width="231dp"
+        android:layout_height="88dp"/>-->
+
+    <!--
+        android:layout_width="231dp"
+        android:layout_height="100dp"
+        -->
+    <!--<com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+        android:id="@+id/youtube_view"
+        android:layout_width="229dp"
+        android:layout_height="88dp"
+        android:visibility="visible"
+        />-->
+
     <Chronometer
         android:id="@+id/simpleChronometer"
         android:layout_width="184dp"
         android:layout_height="88dp"
-        android:layout_gravity="right|center_horizontal"
+        android:layout_gravity="center_horizontal"
         android:textSize="50dp"
         android:visibility="invisible" />
 
+
     <!--<WebView
-        android:id="@+id/youtubeView"
+        android:id="@+id/youtube_view"
         android:layout_width="229dp"
         android:layout_height="91dp" />-->
 
