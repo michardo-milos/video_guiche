@@ -47,6 +47,9 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video)
 
+//        val action: String? = intent.action
+//        val data: Uri? = intent.data
+
         room = intent.getStringExtra("ROOM_NAME").toString()
 
         connectToSocketServer()
@@ -139,8 +142,9 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         val builder = AlertDialog.Builder(this)
         val videoView = VideoView(this)
 //        val videoView = findViewById<VideoView>(R.id.videoView)
-        val uri: Uri = Uri.parse("android.resource://" + packageName + "/" + resources.getIdentifier(id, "raw", packageName))
-        videoView.setVideoURI(uri)
+//        val uri: Uri = Uri.parse("android.resource://" + packageName + "/" + resources.getIdentifier(id, "raw", packageName))
+//        videoView.setVideoURI(uri)
+        videoView.setVideoPath("http://62.171.136.153/$id")
         builder.setView(videoView)
         builder.setNegativeButton(
                 "Cancel"
@@ -150,8 +154,8 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
     }
 
     fun onClickShowVideo () {
-        var arrayActions = ArrayList<String>()
-        val fields: Array<Field> = R.raw::class.java.fields
+//        var arrayActions = ArrayList<String>()
+        /*val fields: Array<Field> = R.raw::class.java.fields
         fields.forEach {field ->
             if (field.name.contains("video_")) {
                 arrayActions.add(field.name)
@@ -161,15 +165,17 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
                 )
             }
         }
-        var array = arrayActions.toTypedArray()
+
+        var array = arrayActions.toTypedArray()*/
+        val arrayActions = arrayOf("The_Burpee.mp4")
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Link do video")
 
-        builder.setItems(array,
+        builder.setItems(arrayActions,
                 DialogInterface.OnClickListener { dialog, wich ->
                     val obj = JSONObject()
                     obj.put("room_id", room)
-                    obj.put("video_name", array[wich])
+                    obj.put("video_name", "The_Burpee.mp4")
                     mSocket?.emit("share_video", obj)
                 })
 
@@ -246,18 +252,46 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         mediaRecorder?.start()
     }
 
+    fun onClickShareMeeting () {
+        /*val builder = AlertDialog.Builder(this)
+        builder.setTitle("Inserir número para partilhar (incluir indicativo sem o '+')")
+        val input = EditText(this)
+        builder.setView(input)
+
+        builder.setPositiveButton(
+            "OK"
+        ) { dialog, which ->
+            val url = "https://api.whatsapp.com/send?phone=${input.text}&text=Junte-se+%C3%A1+reuni%C3%A3o+com+o+seguinte+id%3A+${room}"
+//            val url = "https://api.whatsapp.com/send?text=Junte-se+%C3%A1+reuni%C3%A3o+com+o+seguinte+id%3A+${room}"
+            val i = Intent(Intent.ACTION_VIEW).apply {
+                setData(Uri.parse(url))
+            }
+            startActivity(i)
+        }
+        builder.setNegativeButton(
+            "Cancel"
+        ) { dialog, which -> dialog.cancel() }
+
+        builder.show()*/
+        val url = "https://api.whatsapp.com/send?text=Junte-se+%C3%A1+reuni%C3%A3o+com+o+seguinte+id%3A+${room}"
+        val i = Intent(Intent.ACTION_VIEW).apply {
+            setData(Uri.parse(url))
+        }
+        startActivity(i)
+    }
+
     fun onClickFabButton (v: View) {
         Log.i("FAB", "FAB CLICKED")
         val builder = AlertDialog.Builder(this)
         var arrayActions = emptyArray<String>()
         if (!isTimerRunning) {
             if (isTimerSet) {
-                arrayActions = arrayOf("Show Video", "Start Timer", "Record")
+                arrayActions = arrayOf("Show Video", "Start Timer", "Share Meeting")
             } else {
-                arrayActions = arrayOf("Show Video", "Set Timer", "Record")
+                arrayActions = arrayOf("Show Video", "Set Timer", "Share Meeting")
             }
         } else {
-            arrayActions = arrayOf("Show Video", "Stop Timer", "Record")
+            arrayActions = arrayOf("Show Video", "Stop Timer", "Share Meeting")
         }
 
         builder.setTitle("Acções")
@@ -275,7 +309,7 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
                                             onClickSetTimer()
                                         }
                                     }
-                                2 -> onClickRecord()
+                                2 -> onClickShareMeeting()
                             }
                         })
         builder.show()

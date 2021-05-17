@@ -12,7 +12,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.VideoApp"
         android:usesCleartextTraffic="true">
-        <activity android:name=".VideoActivity" />
+        <activity android:name=".VideoActivity">
+            <intent-filter android:label="@string/app_name">
+                <action android:name="android.intent.action.VIEW"></action>
+                <category android:name="android.intent.category.DEFAULT"></category>
+                <category android:name="android.intent.category.BROWSABLE"></category>
+                <data android:scheme="https" android:host="videoapp.live"></data>
+            </intent-filter>
+        </activity>
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
