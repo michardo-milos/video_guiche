@@ -8,34 +8,45 @@
 
     <Button
         android:id="@+id/button4"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="87dp"
-        android:layout_marginTop="341dp"
-        android:layout_marginEnd="67dp"
-        android:layout_marginBottom="342dp"
+        android:layout_width="144dp"
+        android:layout_height="43dp"
+        android:layout_marginTop="279dp"
+        android:layout_marginBottom="19dp"
         android:onClick="onButtonClick"
-        android:text="Create"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/button2"
+        android:text="Criar Sala"
+        app:layout_constraintBottom_toTopOf="@+id/button2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/button2"
+        android:layout_width="225dp"
+        android:layout_height="49dp"
+        android:layout_marginTop="19dp"
+        android:layout_marginBottom="20dp"
+        android:onClick="onJoinButtonClick"
+        android:text="Juntar a uma sala"
+        app:layout_constraintBottom_toTopOf="@+id/button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button4" />
+
+    <Button
+        android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="68dp"
-        android:layout_marginTop="341dp"
-        android:layout_marginEnd="74dp"
-        android:layout_marginBottom="342dp"
-        android:onClick="onJoinButtonClick"
-        android:text="Join"
+        android:layout_marginTop="14dp"
+        android:layout_marginBottom="273dp"
+        android:onClick="viewWorkoutPlans"
+        android:text="Ver treinos"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/button4"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button2" />
 
     <!--<EditText
         android:id="@+id/conferenceName"

@@ -18,7 +18,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun enterVideoConference(roomName: String) {
-        Log.i("MAIN", "enterVideoConference")
         val intent = Intent(this, VideoActivity::class.java).apply {
             putExtra("ROOM_NAME", roomName)
         }
@@ -26,14 +25,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun onButtonClick(v: View?) {
-        Log.i("MAIN", "onButtonClick")
         val room = Random.nextInt(111111, 999999).toString()
         enterVideoConference(room)
 
     }
 
     fun onJoinButtonClick (v: View) {
-        Log.i("MAIN", "onJoinButtonClick")
         var roomName = ""
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Juntar a uma sala")
@@ -51,5 +48,10 @@ class MainActivity : AppCompatActivity() {
         ) { dialog, which -> dialog.cancel() }
 
         builder.show()
+    }
+
+    fun viewWorkoutPlans (v: View) {
+        val intent = Intent(this, WorkoutPlans::class.java)
+        startActivity(intent)
     }
 }

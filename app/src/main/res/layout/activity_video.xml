@@ -29,7 +29,7 @@
         android:id="@+id/simpleChronometer"
         android:layout_width="184dp"
         android:layout_height="88dp"
-        android:layout_gravity="center_horizontal"
+        android:layout_gravity="center_horizontal|top"
         android:textSize="50dp"
         android:visibility="invisible" />
 

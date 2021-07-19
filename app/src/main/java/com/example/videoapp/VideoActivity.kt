@@ -273,7 +273,7 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         ) { dialog, which -> dialog.cancel() }
 
         builder.show()*/
-        val url = "https://api.whatsapp.com/send?text=Junte-se+%C3%A1+reuni%C3%A3o+com+o+seguinte+id%3A+${room}"
+        val url = "https://api.whatsapp.com/send?text=Junte-se%20ao%20treino%20com%20o%20seguinte%20id%3A%20${room}"
         val i = Intent(Intent.ACTION_VIEW).apply {
             setData(Uri.parse(url))
         }

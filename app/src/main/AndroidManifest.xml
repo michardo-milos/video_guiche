@@ -12,12 +12,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.VideoApp"
         android:usesCleartextTraffic="true">
+        <activity android:name=".Workout"></activity>
+        <activity android:name=".WorkoutPlans" />
         <activity android:name=".VideoActivity">
             <intent-filter android:label="@string/app_name">
-                <action android:name="android.intent.action.VIEW"></action>
-                <category android:name="android.intent.category.DEFAULT"></category>
-                <category android:name="android.intent.category.BROWSABLE"></category>
-                <data android:scheme="https" android:host="videoapp.live"></data>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="videoapp.live"
+                    android:scheme="https" />
             </intent-filter>
         </activity>
         <activity android:name=".MainActivity">
