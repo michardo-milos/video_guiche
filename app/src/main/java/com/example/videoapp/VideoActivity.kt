@@ -3,6 +3,7 @@ package com.example.videoapp
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
+import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Bundle
@@ -16,21 +17,16 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.facebook.react.modules.core.PermissionListener
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.YouTubePlayerCallback
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.YouTubePlayerListener
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 import io.socket.client.IO
 import io.socket.client.Socket
 import org.jitsi.meet.sdk.*
 import org.json.JSONObject
-import java.io.File
-import java.lang.reflect.Field
 import java.net.MalformedURLException
 import java.net.URL
+import kotlin.reflect.typeOf
 
 
-class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
+class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface, Chronometer.OnChronometerTickListener {
 
     private var mSocket: Socket? = null
     private var room: String = ""
@@ -197,16 +193,24 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         simpleChronometer.base = SystemClock.elapsedRealtime() + timeWhenStopped
 //        simpleChronometer.visibility = View.VISIBLE
         simpleChronometer.start()
+        simpleChronometer.setOnChronometerTickListener(this)
         isTimerRunning = true
+        val timerStartButton = findViewById<Button>(R.id.timerStartButton)
+        val timerStopButton = findViewById<Button>(R.id.timerStopButton)
+        timerStartButton.visibility = View.INVISIBLE
+        timerStopButton.visibility = View.VISIBLE
     }
 
     fun stopTimer () {
         val simpleChronometer = findViewById<Chronometer>(R.id.simpleChronometer)
         timeWhenStopped = simpleChronometer.base - SystemClock.elapsedRealtime()
         simpleChronometer.stop()
-        simpleChronometer.visibility = View.INVISIBLE
         isTimerSet = false
         isTimerRunning = false
+        val timerStartButton = findViewById<Button>(R.id.timerStartButton)
+        val timerStopButton = findViewById<Button>(R.id.timerStopButton)
+        timerStartButton.visibility = View.INVISIBLE
+        timerStopButton.visibility = View.INVISIBLE
     }
 
     fun onClickStopTimer () {
@@ -234,6 +238,10 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
             obj.put("room_id", room)
             obj.put("duration", input.text.toString().toInt())
             mSocket?.emit("set_timer", obj)
+            val timerStartButton = findViewById<Button>(R.id.timerStartButton)
+            val timerStopButton = findViewById<Button>(R.id.timerStopButton)
+            timerStartButton.visibility = View.VISIBLE
+            timerStopButton.visibility = View.INVISIBLE
 //            startTimer(input.text.toString().toInt())
         }
         builder.setNegativeButton(
@@ -283,8 +291,8 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
     fun onClickFabButton (v: View) {
         Log.i("FAB", "FAB CLICKED")
         val builder = AlertDialog.Builder(this)
-        var arrayActions = emptyArray<String>()
-        if (!isTimerRunning) {
+        val arrayActions = arrayOf("Show Video", "Share Meeting")
+        /*if (!isTimerRunning) {
             if (isTimerSet) {
                 arrayActions = arrayOf("Show Video", "Start Timer", "Share Meeting")
             } else {
@@ -292,14 +300,14 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
             }
         } else {
             arrayActions = arrayOf("Show Video", "Stop Timer", "Share Meeting")
-        }
+        }*/
 
         builder.setTitle("Acções")
                 .setItems(arrayActions,
                         DialogInterface.OnClickListener { dialog, wich ->
                             when (wich) {
                                 0 -> onClickShowVideo()
-                                1 ->
+                                /*1 ->
                                     if (isTimerRunning) {
                                         onClickStopTimer()
                                     }  else {
@@ -308,8 +316,8 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
                                         } else {
                                             onClickSetTimer()
                                         }
-                                    }
-                                2 -> onClickShareMeeting()
+                                    }*/
+                                1 -> onClickShareMeeting()
                             }
                         })
         builder.show()
@@ -323,11 +331,35 @@ class VideoActivity : AppCompatActivity(), JitsiMeetActivityInterface {
         }
     }
 
+    fun onClickTimer (v: View) {
+        onClickSetTimer()
+    }
+
+    fun onClickStartTimerButton (v: View) {
+        onClickStartTimer()
+    }
+
+    fun onClickStopTimerButton (v: View) {
+        onClickStopTimer()
+    }
+
     override fun requestPermissions(p0: Array<out String>?, p1: Int, p2: PermissionListener?) {
         JitsiMeetActivityDelegate.requestPermissions(this, p0, p1, p2)
     }
 
     override fun onDestroy() {
         super.onDestroy()
+    }
+
+    override fun onChronometerTick(chronometer: Chronometer?) {
+        val simpleChronometer = findViewById<Chronometer>(R.id.simpleChronometer)
+        val time = SystemClock.elapsedRealtime() - simpleChronometer.base
+        Log.i("simpleChronometer", time.toString())
+        if (time > 0) {
+            Log.i("simpleChronometer", "is zero")
+            stopTimer()
+            val mediaPlayer = MediaPlayer.create(this, R.raw.beep)
+            mediaPlayer.start()
+        }
     }
 }
